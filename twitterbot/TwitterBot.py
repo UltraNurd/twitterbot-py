@@ -165,6 +165,53 @@ class TwitterBot(object):
             # Wait until the appointed time, when the moon is lighting the pitch
             time.sleep(15)
 
+    def __thread_get_replies(self):
+        """
+        Loop indefinitely, polling Twitter for replies sent to the bot's
+        user.
+        """
+
+        # Determine the most recent reply as of startup (don't go into past)
+        replies = self.__api.GetReplies()
+        if len(replies) > 0:
+            # Replies come in reverse chronological order; first is most recent
+            since_id = replies[0].id
+        else:
+            since_id = 0
+
+        # Loop indefinitely
+        while True:
+            # Lock for the duration of this iteration
+            self.__locks["get_replies"].acquire()
+
+            # Check if we're stopping
+            if not self.__running["get_replies"]:
+                self.__locks["get_replies"].release()
+                break
+
+            # Read any new replies received since last check
+            replies = self.__api.GetReplies(since_id = since_id)
+
+            # Process replies in the order they were received, least recent 1st
+            replies.reverse()
+
+            # Run the event handler on each reply received
+            for reply in replies:
+                eh = self.__event_handlers["get_replies"]
+                eh[0](self.__api, reply = reply,
+                      args = eh[1], kwargs = eh[2])
+
+            # Update the since filter based on the last reply read
+            if len(replies) > 0:
+                # We reversed the list, so last is most recent
+                since_id = replies[-1].id
+
+            # Done for this iteration
+            self.__locks["get_replies"].release()
+
+            # Wait until the appointed time, when the moon is lighting the pitch
+            time.sleep(15)
+
     def start(self):
         """
         Initialize threads and locks for each defined event type and start them.
