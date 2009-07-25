@@ -52,7 +52,8 @@ import twitterbot
 class EchoTwitterBot(twitterbot.TwitterBot):
     """
     Implement a simple example TwitterBot, with event handling methods for
-    @mentions and DMs that immediately echo the contents back to the sender.
+    friends' statuses, @mentions and DMs that immediately echo the contents
+    back to the sender.
     """
 
     def __init__(self, username, password):
@@ -66,6 +67,7 @@ class EchoTwitterBot(twitterbot.TwitterBot):
         # Add a callback for the DM and mention handlers
         self.add_event_handler("get_dms", self.__echo_dm)
         self.add_event_handler("get_replies", self.__echo_reply)
+        self.add_event_handler("get_timeline", self.__echo_status)
 
         # Prep a regular expression to filter this username out of replies
         self.re_reply = re.compile('^@%s\s*' % username)
@@ -80,6 +82,19 @@ class EchoTwitterBot(twitterbot.TwitterBot):
         print "Received: %s" % direct_message
         posted = api.PostDirectMessage(direct_message.sender_id,
                                        direct_message.text)
+        print "Sent: %s" % posted
+
+    def __echo_status(self, api, status, args = (), kwargs = {}):
+        """
+        Reply to any status update by echoing the contents back
+        to the sender.
+        """
+
+        # Create a message to echo back to them
+        print "Received: %s" % status
+        text = "@%s %s" % (status.user.screen_name, status.text)
+        posted = api.PostUpdate(status = text,
+                                in_reply_to_status_id = status.id)
         print "Sent: %s" % posted
 
     def __echo_reply(self, api, reply, args = (), kwargs = {}):

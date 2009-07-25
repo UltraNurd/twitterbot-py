@@ -220,6 +220,55 @@ class TwitterBot(object):
             # Wait until the appointed time, when the moon is lighting the pitch
             time.sleep(eh["timeout"])
 
+    def __thread_get_timeline(self):
+        """
+        Loop indefinitely, polling Twitter for messages sent by those the bot
+        account follows.
+        """
+
+        # Determine the most recent status as of startup (don't go into past)
+        statuses = self.__api.GetFriendsTimeline()
+        if len(statuses) > 0:
+            # Statuses come in reverse chronological order; first is most recent
+            since_id = statuses[0].id
+        else:
+            since_id = 0
+
+        # Get the event handler associated with this thread
+        eh = self.__event_handlers["get_timeline"]
+
+        # Loop indefinitely
+        while True:
+            # Lock for the duration of this iteration
+            self.__locks["get_timeline"].acquire()
+
+            # Check if we're stopping
+            if not self.__running["get_timeline"]:
+                self.__locks["get_timeline"].release()
+                break
+
+            # Read any new statuses received since last check
+            statuses = self.__api.GetFriendsTimeline(since_id = since_id)
+
+            # Process statuses in the order they were received, least recent 1st
+            statuses.reverse()
+
+            # Run the event handler on each status posted by a friend
+            for status in statuses:
+                eh["callback"](self.__api, status = status,
+                               args = eh["args"], kwargs = eh["kwargs"])
+
+            # Update the since filter based on the last reply read
+            if len(statuses) > 0:
+                # We reversed the list, so last is most recent
+                since_id = statuses[-1].id
+
+            # Done for this iteration
+            self.__locks["get_timeline"].release()
+
+            # Wait until the appointed time, when the moon is lighting the pitch
+            time.sleep(eh["timeout"])
+
     def start(self):
         """
         Initialize threads and locks for each defined event type and start them.
