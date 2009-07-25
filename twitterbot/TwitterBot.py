@@ -127,7 +127,8 @@ class TwitterBot(object):
         # Determine the most recent DM as of startup (don't go into past)
         direct_messages = self.__api.GetDirectMessages()
         if len(direct_messages) > 0:
-            since_id = direct_messages[-1].id
+            # DMs come in reverse chronological order; first is most recent
+            since_id = direct_messages[0].id
         else:
             since_id = 0
 
@@ -144,6 +145,9 @@ class TwitterBot(object):
             # Read any new DMs received since last check
             direct_messages = self.__api.GetDirectMessages(since_id = since_id)
 
+            # Process DMs in the order they were received, least recent 1st
+            direct_messages.reverse()
+
             # Run the event handler on each DM received
             for direct_message in direct_messages:
                 eh = self.__event_handlers["get_dms"]
@@ -152,6 +156,7 @@ class TwitterBot(object):
 
             # Update the since filter based on the last DM read
             if len(direct_messages) > 0:
+                # We reversed the list, so last is most recent
                 since_id = direct_messages[-1].id
 
             # Done for this iteration
