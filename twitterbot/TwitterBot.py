@@ -85,7 +85,8 @@ class TwitterBot(object):
         # We're not running until start() is called
         self.running = False
 
-    def add_event_handler(self, type, callback, args = (), kwargs = {}):
+    def add_event_handler(self, type, callback, timeout = 15,
+                          args = (), kwargs = {}):
         """
         Associate the specified callable (and optional arguments) with the
         specified callback type, assuming it's valid.
@@ -100,7 +101,10 @@ class TwitterBot(object):
             raise Exception("Callback is not callable")
 
         # Store the callback and its arguments as the handler for this event
-        self.__event_handlers[type] = (callback, args, kwargs)
+        self.__event_handlers[type] = {"callback":callback,
+                                       "timeout":timeout,
+                                       "args":args,
+                                       "kwargs":kwargs}
 
     def remove_event_handler(self, type):
         """
@@ -132,6 +136,9 @@ class TwitterBot(object):
         else:
             since_id = 0
 
+        # Get the event handler associated with this thread
+        eh = self.__event_handlers["get_dms"]
+
         # Loop indefinitely
         while True:
             # Lock for the duration of this iteration
@@ -150,9 +157,8 @@ class TwitterBot(object):
 
             # Run the event handler on each DM received
             for direct_message in direct_messages:
-                eh = self.__event_handlers["get_dms"]
-                eh[0](self.__api, direct_message = direct_message,
-                      args = eh[1], kwargs = eh[2])
+                eh["callback"](self.__api, direct_message = direct_message,
+                               args = eh["args"], kwargs = eh["kwargs"])
 
             # Update the since filter based on the last DM read
             if len(direct_messages) > 0:
@@ -163,7 +169,7 @@ class TwitterBot(object):
             self.__locks["get_dms"].release()
 
             # Wait until the appointed time, when the moon is lighting the pitch
-            time.sleep(15)
+            time.sleep(eh["timeout"])
 
     def __thread_get_replies(self):
         """
@@ -178,6 +184,9 @@ class TwitterBot(object):
             since_id = replies[0].id
         else:
             since_id = 0
+
+        # Get the event handler associated with this thread
+        eh = self.__event_handlers["get_replies"]
 
         # Loop indefinitely
         while True:
@@ -197,9 +206,8 @@ class TwitterBot(object):
 
             # Run the event handler on each reply received
             for reply in replies:
-                eh = self.__event_handlers["get_replies"]
-                eh[0](self.__api, reply = reply,
-                      args = eh[1], kwargs = eh[2])
+                eh["callback"](self.__api, reply = reply,
+                               args = eh["args"], kwargs = eh["kwargs"])
 
             # Update the since filter based on the last reply read
             if len(replies) > 0:
@@ -210,7 +218,7 @@ class TwitterBot(object):
             self.__locks["get_replies"].release()
 
             # Wait until the appointed time, when the moon is lighting the pitch
-            time.sleep(15)
+            time.sleep(eh["timeout"])
 
     def start(self):
         """
