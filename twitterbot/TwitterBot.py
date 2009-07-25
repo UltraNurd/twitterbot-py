@@ -157,8 +157,14 @@ class TwitterBot(object):
 
             # Run the event handler on each DM received
             for direct_message in direct_messages:
-                eh["callback"](self.__api, direct_message = direct_message,
-                               args = eh["args"], kwargs = eh["kwargs"])
+                # Ignore any errors from the event handler
+                try:
+                    eh["callback"](self.__api, direct_message = direct_message,
+                                   args = eh["args"], kwargs = eh["kwargs"])
+                except Exception as e:
+                    # Drop this DM on the floor and keep going
+                    print "Could not process %s: %s" % (direct_message, e)
+                    pass
 
             # Update the since filter based on the last DM read
             if len(direct_messages) > 0:
@@ -206,8 +212,14 @@ class TwitterBot(object):
 
             # Run the event handler on each reply received
             for reply in replies:
-                eh["callback"](self.__api, reply = reply,
-                               args = eh["args"], kwargs = eh["kwargs"])
+                # Ignore any errors from the event handler
+                try:
+                    eh["callback"](self.__api, reply = reply,
+                                   args = eh["args"], kwargs = eh["kwargs"])
+                except Exception as e:
+                    # Drop this reply on the floor and keep going
+                    print "Could not process %s: %s" % (reply, e)
+                    pass
 
             # Update the since filter based on the last reply read
             if len(replies) > 0:
@@ -255,8 +267,14 @@ class TwitterBot(object):
 
             # Run the event handler on each status posted by a friend
             for status in statuses:
-                eh["callback"](self.__api, status = status,
-                               args = eh["args"], kwargs = eh["kwargs"])
+                # Ignore any errors from the event handler
+                try:
+                    eh["callback"](self.__api, status = status,
+                                   args = eh["args"], kwargs = eh["kwargs"])
+                except Exception as e:
+                    # Drop this friend's status on the floor and keep going
+                    print "Could not process %s: %s" % (status, e)
+                    pass
 
             # Update the since filter based on the last reply read
             if len(statuses) > 0:
