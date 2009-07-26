@@ -49,9 +49,6 @@ import threading
 # Twitter includes
 import twitter
 
-# Twitterbot includes
-import twitterbot
-
 class TwitterBot(object):
     """
     Implement an event-handling polling-based Twitter metabot that uses
