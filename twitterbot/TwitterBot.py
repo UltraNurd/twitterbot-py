@@ -158,7 +158,7 @@ class TwitterBot(object):
                 try:
                     eh["callback"](self.__api, direct_message = direct_message,
                                    args = eh["args"], kwargs = eh["kwargs"])
-                except Exception as e:
+                except Exception, e:
                     # Drop this DM on the floor and keep going
                     print "Could not process %s: %s" % (direct_message, e)
                     pass
@@ -213,7 +213,7 @@ class TwitterBot(object):
                 try:
                     eh["callback"](self.__api, reply = reply,
                                    args = eh["args"], kwargs = eh["kwargs"])
-                except Exception as e:
+                except Exception, e:
                     # Drop this reply on the floor and keep going
                     print "Could not process %s: %s" % (reply, e)
                     pass
@@ -268,7 +268,7 @@ class TwitterBot(object):
                 try:
                     eh["callback"](self.__api, status = status,
                                    args = eh["args"], kwargs = eh["kwargs"])
-                except Exception as e:
+                except Exception, e:
                     # Drop this friend's status on the floor and keep going
                     print "Could not process %s: %s" % (status, e)
                     pass
